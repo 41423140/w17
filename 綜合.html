@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Brython 遊戲中心</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.11.0/brython.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.11.0/brython_stdlib.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+            background: linear-gradient(45deg, #00dbde, #fc00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #aaa;
+            margin-bottom: 20px;
+        }
+        
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .game-card {
+            background: rgba(30, 30, 46, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+            backdrop-filter: blur(10px);
+        }
+        
+        .game-card:hover {
+            transform: translateY(-8px);
+            border-color: #00dbde;
+            box-shadow: 0 10px 30px rgba(0, 219, 222, 0.2);
+        }
+        
+        .game-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .game-title {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        
+        .game-desc {
+            color: #bbb;
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+        
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        
+        .play-btn {
+            background: linear-gradient(45deg, #00dbde, #fc00ff);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        .play-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 219, 222, 0.3);
+        }
+        
+        .game-area {
+            display: none;
+            margin-top: 30px;
+            background: rgba(20, 20, 35, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            min-height: 500px;
+            border: 2px solid #00dbde;
+        }
+        
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .back-btn {
+            background: #444;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: #555;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+        
+        canvas {
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+            background: #000;
+            border: 2px solid #333;
+        }
+        
+        .todo-area {
+            display: none;
+            margin-top: 30px;
+        }
+        
+        /* 待辦事項特定樣式 */
+        .todo-container {
+            background: white;
+            border-radius: 12px;
+            padding: 2em 3em;
+            color: #333;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .input-area {
+            display: flex;
+            gap: 1em;
+            align-items: flex-end;
+            margin-bottom: 1.8em;
+        }
+        
+        .inputs {
+            flex: 1 1 0;
+            display: flex;
+            gap: 1em;
+        }
+        
+        .todo-input {
+            width: 100%;
+            padding: 0.7em 1em;
+            border: 1.5px solid #d1d9e6;
+            border-radius: 8px;
+            font-size: 1.1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .todo-input:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 8px rgba(52, 152, 219, 0.4);
+        }
+        
+        #task_input {
+            flex: 3 1 0;
+        }
+        
+        #datetime_input {
+            flex: 2 1 0;
+        }
+        
+        #location_input {
+            flex: 2 1 0;
+        }
+        
+        #add_btn {
+            flex: 0 0 150px;
+            background-color: #3498db;
+            border: none;
+            color: white;
+            font-size: 1.2em;
+            padding: 0.8em 0;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.5);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        #add_btn:hover {
+            background-color: #2980b9;
+            box-shadow: 0 6px 16px rgba(41, 128, 185, 0.7);
+        }
+        
+        #task_list {
+            list-style: none;
+            padding: 0;
+            margin-top: 2em;
+            max-height: 450px;
+            overflow-y: auto;
+        }
+        
+        #task_list li {
+            background: #ecf0f1;
+            padding: 1.2em 1.5em;
+            border-radius: 12px;
+            margin-bottom: 1em;
+            position: relative;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            transition: background-color 0.3s ease;
+        }
+        
+        #task_list li:hover {
+            background-color: #d6eaf8;
+        }
+        
+        .task-title {
+            font-weight: 700;
+            font-size: 1.15em;
+            color: #2c3e50;
+        }
+        
+        .task-info {
+            margin-top: 0.4em;
+            font-size: 0.9em;
+            color: #5d6d7e;
+            user-select: none;
+        }
+        
+        .delete-btn {
+            position: absolute;
+            top: 1.1em;
+            right: 1.1em;
+            background: #e74c3c;
+            border: none;
+            color: white;
+            padding: 0.4em 0.8em;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.6);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .delete-btn:hover {
+            background-color: #c0392b;
+            box-shadow: 0 3px 10px rgba(192, 57, 43, 0.8);
+        }
+        
+        .today-task {
+            border-left: 6px solid #3498db !important;
+            background-color: #d6eaf8 !important;
+        }
+        
+        @media (max-width: 768px) {
+            .game-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .game-card {
+                padding: 20px;
+            }
+            
+            .input-area {
+                flex-direction: column;
+            }
+            
+            .inputs {
+                flex-direction: column;
+            }
+            
+            #add_btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body onload="brython()">
+    <div class="container">
+        <header>
+            <h1>🎮 Brython 遊戲中心</h1>
+            <p class="subtitle">選擇一款遊戲開始挑戰，或是管理你的待辦事項</p>
+        </header>
+        
+        <div class="game-grid" id="gameGrid">
+            <div class="game-card" data-game="todo">
+                <div class="game-icon">📝</div>
+                <h3 class="game-title">待辦事項管理</h3>
+                <p class="game-desc">管理你的任務、設定時間地點，並接收通知提醒</p>
+                <div class="game-stats">
+                    <span>📅 時間管理</span>
+                    <span>🔔 智慧提醒</span>
+                </div>
+                <button class="play-btn" id="todoBtn">開始使用</button>
+            </div>
+            
+            <div class="game-card" data-game="shooter">
+                <div class="game-icon">🎯</div>
+                <h3 class="game-title">星際射擊戰</h3>
+                <p class="game-desc">WSAD移動，滑鼠瞄準射擊，消滅來襲的敵人</p>
+                <div class="game-stats">
+                    <span>⚡ 快速反應</span>
+                    <span>🎮 雙重操作</span>
+                </div>
+                <button class="play-btn" id="shooterBtn">開始遊戲</button>
+            </div>
+            
+            <div class="game-card" data-game="dodge">
+                <div class="game-icon">🏃</div>
+                <h3 class="game-title">躲避球挑戰</h3>
+                <p class="game-desc">移動綠球避開紅球，收集道具獲得額外分數</p>
+                <div class="game-stats">
+                    <span>🧠 反應力</span>
+                    <span>🌟 道具收集</span>
+                </div>
+                <button class="play-btn" id="dodgeBtn">開始遊戲</button>
+            </div>
+            
+            <div class="game-card" data-game="clicker">
+                <div class="game-icon">🟥</div>
+                <h3 class="game-title">極速點擊方塊</h3>
+                <p class="game-desc">在時間內點擊紅色方塊，測試你的反應速度</p>
+                <div class="game-stats">
+                    <span>⏱️ 時間挑戰</span>
+                    <span>👆 點擊準確</span>
+                </div>
+                <button class="play-btn" id="clickerBtn">開始遊戲</button>
+            </div>
+            
+            <div class="game-card" data-game="spacewar">
+                <div class="game-icon">🚀</div>
+                <h3 class="game-title">星際戰爭</h3>
+                <p class="game-desc">駕駛飛船在星際中戰鬥，躲避敵人的攻擊</p>
+                <div class="game-stats">
+                    <span>🌌 星際背景</span>
+                    <span>🎯 多種敵人</span>
+                </div>
+                <button class="play-btn" id="spacewarBtn">開始遊戲</button>
+            </div>
+        </div>
+        
+        <!-- 待辦事項區域 -->
+        <div class="todo-area" id="todoArea"></div>
+        
+        <!-- 遊戲區域 -->
+        <div class="game-area" id="gameArea">
+            <div class="game-header">
+                <h2 id="gameTitle">遊戲載入中...</h2>
+                <button class="back-btn" id="backBtn">返回主選單</button>
+            </div>
+            <div class="game-container" id="gameContainer"></div>
+        </div>
+    </div>
+
+    <script type="text/python">
+# 導入必要的模組
+from browser import document, window, html, timer, alert
+import json
+import random
+import math
+import time
+import datetime
+
+# ==================== 全域變數 ====================
+current_game = None
+game_timers = []
+todo_storage_key = 'brython_todo_list'
+
+# ==================== 主選單功能 ====================
+def show_main_menu(event=None):
+    """顯示主選單"""
+    document["gameGrid"].style.display = "grid"
+    document["gameArea"].style.display = "none"
+    document["todoArea"].style.display = "none"
+    
+    # 清除所有遊戲計時器
+    for t in game_timers:
+        try:
+            timer.clear_interval(t)
+        except:
+            pass
+    game_timers.clear()
+
+# ==================== 待辦事項應用 ====================
+def load_todo_app(event=None):
+    """載入待辦事項應用"""
+    document["gameGrid"].style.display = "none"
+    document["gameArea"].style.display = "none"
+    todo_area = document["todoArea"]
+    todo_area.style.display = "block"
+    todo_area.clear()
+    
+    # 建立待辦事項介面
+    container = html.DIV(Class="todo-container")
+    
+    # 標題
+    title = html.H2("📝 待辦事項清單")
+    title.style.textAlign = "center"
+    title.style.color = "#2c3e50"
+    title.style.marginBottom = "1.5em"
+    container <= title
+    
+    # 輸入區域
+    input_area = html.DIV(Class="input-area")
+    
+    inputs_div = html.DIV(Class="inputs")
+    
+    task_input = html.INPUT(type="text", id="task_input", Class="todo-input", placeholder="輸入任務名稱")
+    datetime_input = html.INPUT(type="datetime-local", id="datetime_input", Class="todo-input")
+    location_input = html.INPUT(type="text", id="location_input", Class="todo-input", placeholder="輸入地點")
+    
+    inputs_div <= task_input
+    inputs_div <= datetime_input
+    inputs_div <= location_input
+    
+    add_btn = html.BUTTON("＋ 新增任務", id="add_btn")
+    
+    input_area <= inputs_div
+    input_area <= add_btn
+    
+    # 任務列表
+    task_list = html.UL(id="task_list")
+    
+    container <= input_area
+    container <= task_list
+    
+    # 返回按鈕
+    back_btn = html.BUTTON("← 返回遊戲中心", Class="back-btn")
+    back_btn.style.marginTop = "20px"
+    back_btn.bind("click", show_main_menu)
+    
+    todo_area <= container
+    todo_area <= back_btn
+    
+    # 初始化待辦事項功能
+    init_todo_functionality()
+
+def init_todo_functionality():
+    """初始化待辦事項功能"""
+    
+    def save_tasks(tasks):
+        """儲存任務到localStorage"""
+        window.localStorage.setItem(todo_storage_key, json.dumps(tasks))
+    
+    def load_tasks():
+        """從localStorage載入任務"""
+        data = window.localStorage.getItem(todo_storage_key)
+        if data:
+            try:
+                return json.loads(data)
+            except:
+                return []
+        return []
+    
+    def render_task(task, index):
+        """渲染單個任務"""
+        li = html.LI()
+        
+        # 檢查是否為今天的任務
+        is_today = False
+        dt_str = task.get('datetime')
+        if dt_str:
+            try:
+                task_date = datetime.datetime.strptime(dt_str[:10], '%Y-%m-%d').date()
+                if task_date == datetime.date.today():
+                    is_today = True
+            except:
+                pass
+        
+        if is_today:
+            li.classList.add('today-task')
+        
+        # 任務標題
+        title_div = html.DIV(Class="task-title")
+        title_div.text = task['title']
+        li <= title_div
+        
+        # 任務資訊
+        info_parts = []
+        if dt_str:
+            display_time = dt_str.replace('T', ' ')
+            info_parts.append(f"⏰ {display_time}")
+        if task.get('location'):
+            info_parts.append(f"📍 {task['location']}")
+        
+        if info_parts:
+            info_div = html.DIV(Class="task-info")
+            info_div.text = " | ".join(info_parts)
+            li <= info_div
+        
+        # 刪除按鈕
+        del_btn = html.BUTTON("🗑️ 刪除", Class="delete-btn")
+        
+        def delete_task(event):
+            tasks = load_tasks()
+            if 0 <= index < len(tasks):
+                tasks.pop(index)
+                save_tasks(tasks)
+                refresh_task_list()
+        
+        del_btn.bind("click", delete_task)
+        li <= del_btn
+        
+        return li
+    
+    def refresh_task_list():
+        """刷新任務列表"""
+        task_list = document["task_list"]
+        task_list.clear()
+        
+        tasks = load_tasks()
+        
+        # 按時間排序
+        def get_task_time(task):
+            dt_str = task.get('datetime')
+            if dt_str:
+                try:
+                    return datetime.datetime.strptime(dt_str, '%Y-%m-%dT%H:%M')
+                except:
+                    return datetime.datetime.max
+            return datetime.datetime.max
+        
+        sorted_tasks = sorted(tasks, key=get_task_time)
+        
+        # 渲染所有任務
+        for i, task in enumerate(sorted_tasks):
+            task_list <= render_task(task, i)
+        
+        # 檢查並發送今日任務通知
+        check_today_tasks_notification(sorted_tasks)
+    
+    def check_today_tasks_notification(tasks):
+        """檢查並發送今日任務通知"""
+        if not hasattr(window, 'Notification'):
+            return
+        
+        today_str = datetime.date.today().strftime('%Y-%m-%d')
+        today_tasks = [t for t in tasks if t.get('datetime', '').startswith(today_str)]
+        
+        if not today_tasks:
+            return
+        
+        def show_notification():
+            title = "📅 今日待辦事項提醒"
+            body = f"你今天有 {len(today_tasks)} 項待辦事項"
+            options = {"body": body, "icon": "https://cdn-icons-png.flaticon.com/512/3067/3067256.png"}
+            window.Notification.new(title, options)
+        
+        if window.Notification.permission == "granted":
+            show_notification()
+        elif window.Notification.permission != "denied":
+            def permission_callback(permission):
+                if permission == "granted":
+                    show_notification()
+            window.Notification.requestPermission().then(permission_callback)
+    
+    def add_new_task(event=None):
+        """新增任務"""
+        title = document["task_input"].value.strip()
+        datetime_val = document["datetime_input"].value
+        location = document["location_input"].value.strip()
+        
+        if not title:
+            alert("請輸入任務名稱！")
+            return
+        
+        tasks = load_tasks()
+        tasks.append({
+            'title': title,
+            'datetime': datetime_val,
+            'location': location
+        })
+        save_tasks(tasks)
+        
+        # 清空輸入框
+        document["task_input"].value = ''
+        document["datetime_input"].value = ''
+        document["location_input"].value = ''
+        
+        refresh_task_list()
+    
+    def handle_enter_key(event):
+        """處理Enter鍵"""
+        if event.keyCode == 13:  # Enter鍵
+            add_new_task()
+    
+    # 綁定事件
+    document["add_btn"].bind("click", add_new_task)
+    document["task_input"].bind("keydown", handle_enter_key)
+    document["location_input"].bind("keydown", handle_enter_key)
+    
+    # 初始載入任務
+    refresh_task_list()
+
+# ==================== 遊戲載入功能 ====================
+def load_game(game_type, event=None):
+    """載入指定遊戲"""
+    global current_game
+    current_game = game_type
+    
+    document["gameGrid"].style.display = "none"
+    document["todoArea"].style.display = "none"
+    game_area = document["gameArea"]
+    game_container = document["gameContainer"]
+    game_area.style.display = "block"
+    
+    # 設置遊戲標題
+    game_titles = {
+        'shooter': '🎯 星際射擊戰',
+        'dodge': '🏃 躲避球挑戰',
+        'clicker': '🟥 極速點擊方塊',
+        'spacewar': '🚀 星際戰爭'
+    }
+    document["gameTitle"].text = game_titles.get(game_type, "遊戲")
+    
+    # 清除舊遊戲
+    game_container.clear()
+    
+    # 載入對應遊戲
+    if game_type == 'shooter':
+        init_shooter_game(game_container)
+    elif game_type == 'dodge':
+        init_dodge_game(game_container)
+    elif game_type == 'clicker':
+        init_clicker_game(game_container)
+    elif game_type == 'spacewar':
+        init_spacewar_game(game_container)
+
+# ==================== 射擊遊戲 ====================
+def init_shooter_game(container):
+    """初始化射擊遊戲"""
+    
+    # 創建遊戲元素
+    canvas = html.CANVAS(id="shooterCanvas", width=600, height=450)
+    
+    info_div = html.DIV(id="shooterInfo")
+    info_div.style.margin = "15px 0"
+    info_div.style.fontSize = "18px"
+    
+    restart_btn = html.BUTTON("🔄 重新開始", id="shooterRestart")
+    restart_btn.style.display = "none"
+    restart_btn.style.marginTop = "10px"
+    restart_btn.style.padding = "8px 16px"
+    restart_btn.style.background = "#3498db"
+    restart_btn.style.color = "white"
+    restart_btn.style.border = "none"
+    restart_btn.style.borderRadius = "6px"
+    restart_btn.style.cursor = "pointer"
+    
+    container <= canvas
+    container <= info_div
+    container <= restart_btn
+    
+    # 射擊遊戲邏輯
+    class ShooterGame:
+        def __init__(self):
+            self.canvas = document["shooterCanvas"]
+            self.ctx = self.canvas.getContext("2d")
+            self.info = document["shooterInfo"]
+            self.restart_btn = document["shooterRestart"]
+            
+            self.W = self.canvas.width
+            self.H = self.canvas.height
+            
+            # 玩家屬性
+            self.player = {
+                "x": self.W // 2,
+                "y": self.H // 2,
+                "r": 15,
+                "speed": 6,
+                "hp": 100,
+                "max_hp": 100,
+                "level": 1,
+                "score": 0,
+                "shoot_cooldown": 0.15,
+                "last_shot": 0,
+                "bullet_power": 1,
+                "speed_buff": 0,
+                "dx": 0,
+                "dy": -1
+            }
+            
+            # 遊戲物件
+            self.bullets = []
+            self.enemies = []
+            self.items = []
+            
+            # 遊戲狀態
+            self.running = True
+            self.mouse_pos = {"x": self.player["x"], "y": self.player["y"]}
+            self.mouse_down = False
+            self.keys = {"w": False, "a": False, "s": False, "d": False}
+            
+            # 計時器
+            self.last_enemy_spawn = 0
+            self.enemy_spawn_interval = 1400
+            self.last_item_spawn = 0
+            self.item_spawn_interval = 8000
+            
+            # 綁定事件
+            self.bind_events()
+            
+            # 啟動遊戲循環
+            self.game_timer = timer.set_interval(self.game_loop, 16)
+            game_timers.append(self.game_timer)
+        
+        def bind_events(self):
+            """綁定遊戲事件"""
+            document.bind("keydown", self.on_key_down)
+            document.bind("keyup", self.on_key_up)
+            self.canvas.bind("mousemove", self.on_mouse_move)
+            self.canvas.bind("mousedown", self.on_mouse_down)
+            self.canvas.bind("mouseup", self.on_mouse_up)
+            self.restart_btn.bind("click", self.restart)
+        
+        def on_key_down(self, event):
+            """處理按鍵按下"""
+            key = event.key.lower()
+            if key in self.keys:
+                self.keys[key] = True
+        
+        def on_key_up(self, event):
+            """處理按鍵釋放"""
+            key = event.key.lower()
+            if key in self.keys:
+                self.keys[key] = False
+        
+        def on_mouse_move(self, event):
+            """處理滑鼠移動"""
+            rect = self.canvas.getBoundingClientRect()
+            self.mouse_pos["x"] = event.clientX - rect.left
+            self.mouse_pos["y"] = event.clientY - rect.top
+        
+        def on_mouse_down(self, event):
+            """處理滑鼠按下"""
+            if event.button == 0:
+                self.mouse_down = True
+        
+        def on_mouse_up(self, event):
+            """處理滑鼠釋放"""
+            if event.button == 0:
+                self.mouse_down = False
+        
+        def distance(self, obj1, obj2):
+            """計算兩點距離"""
+            dx = obj1["x"] - obj2["x"]
+            dy = obj1["y"] - obj2["y"]
+            return math.sqrt(dx*dx + dy*dy)
+        
+        def draw_circle(self, x, y, r, color):
+            """繪製圓形"""
+            self.ctx.beginPath()
+            self.ctx.arc(x, y, r, 0, 2 * math.pi)
+            self.ctx.fillStyle = color
+            self.ctx.fill()
+            self.ctx.closePath()
+        
+        def spawn_enemy(self):
+            """生成敵人"""
+            enemy_type = random.choice(["chaser", "linear", "bouncer"])
+            x = random.randint(20, self.W - 20)
+            y = -20
+            
+            enemy = {
+                "type": enemy_type,
+                "x": x,
+                "y": y,
+                "r": 15,
+                "hp": 2 + self.player["level"] // 2,
+                "speed": 1.5 + self.player["level"] * 0.2,
+                "vx": 0,
+                "vy": 0
+            }
+            
+            if enemy_type == "linear":
+                enemy["vx"] = random.uniform(-1, 1)
+                enemy["vy"] = enemy["speed"]
+            elif enemy_type == "bouncer":
+                enemy["vx"] = random.uniform(-2, 2)
+                enemy["vy"] = enemy["speed"] * 0.7
+            
+            self.enemies.append(enemy)
+        
+        def spawn_item(self):
+            """生成道具"""
+            item_type = random.choice(["heal", "speed"])
+            item = {
+                "x": random.randint(15, self.W - 15),
+                "y": -15,
+                "r": 10,
+                "type": item_type,
+                "vy": 2,
+                "duration": 5000
+            }
+            self.items.append(item)
+        
+        def update_player(self):
+            """更新玩家狀態"""
+            # 移動
+            dx = dy = 0
+            if self.keys["w"]: dy -= 1
+            if self.keys["s"]: dy += 1
+            if self.keys["a"]: dx -= 1
+            if self.keys["d"]: dx += 1
+            
+            dist = math.sqrt(dx*dx + dy*dy)
+            if dist > 0:
+                dx /= dist
+                dy /= dist
+                
+                speed_mult = 1.8 if self.player["speed_buff"] > time.time() * 1000 else 1
+                self.player["x"] += dx * self.player["speed"] * speed_mult
+                self.player["y"] += dy * self.player["speed"] * speed_mult
+            
+            # 邊界檢查
+            self.player["x"] = max(self.player["r"], min(self.W - self.player["r"], self.player["x"]))
+            self.player["y"] = max(self.player["r"], min(self.H - self.player["r"], self.player["y"]))
+            
+            # 瞄準方向
+            mx, my = self.mouse_pos["x"], self.mouse_pos["y"]
+            pdx = mx - self.player["x"]
+            pdy = my - self.player["y"]
+            pdist = math.sqrt(pdx*pdx + pdy*pdy)
+            if pdist > 0:
+                self.player["dx"] = pdx / pdist
+                self.player["dy"] = pdy / pdist
+        
+        def shoot(self):
+            """發射子彈"""
+            now = time.time()
+            if now - self.player["last_shot"] < self.player["shoot_cooldown"]:
+                return
+            
+            self.player["last_shot"] = now
+            speed = 10
+            self.bullets.append({
+                "x": self.player["x"],
+                "y": self.player["y"],
+                "vx": self.player["dx"] * speed,
+                "vy": self.player["dy"] * speed,
+                "r": 5
+            })
+        
+        def update_bullets(self):
+            """更新子彈"""
+            for bullet in self.bullets[:]:
+                bullet["x"] += bullet["vx"]
+                bullet["y"] += bullet["vy"]
+                
+                # 移除超出邊界的子彈
+                if (bullet["x"] < 0 or bullet["x"] > self.W or 
+                    bullet["y"] < 0 or bullet["y"] > self.H):
+                    self.bullets.remove(bullet)
+        
+        def update_enemies(self):
+            """更新敵人"""
+            for enemy in self.enemies[:]:
+                # 根據類型移動
+                if enemy["type"] == "chaser":
+                    dx = self.player["x"] - enemy["x"]
+                    dy = self.player["y"] - enemy["y"]
+                    dist = math.sqrt(dx*dx + dy*dy)
+                    if dist > 0:
+                        enemy["vx"] = dx / dist * enemy["speed"]
+                        enemy["vy"] = dy / dist * enemy["speed"]
+                elif enemy["type"] == "linear":
+                    if enemy["x"] <= enemy["r"] or enemy["x"] >= self.W - enemy["r"]:
+                        enemy["vx"] *= -1
+                elif enemy["type"] == "bouncer":
+                    if enemy["x"] <= enemy["r"] or enemy["x"] >= self.W - enemy["r"]:
+                        enemy["vx"] *= -1
+                    if enemy["y"] <= enemy["r"] or enemy["y"] >= self.H - enemy["r"]:
+                        enemy["vy"] *= -1
+                
+                enemy["x"] += enemy["vx"]
+                enemy["y"] += enemy["vy"]
+                
+                # 移除超出邊界的敵人
+                if enemy["y"] > self.H + enemy["r"]:
+                    self.enemies.remove(enemy)
+        
+        def update_items(self):
+            """更新道具"""
+            for item in self.items[:]:
+                item["y"] += item["vy"]
+                if item["y"] > self.H + item["r"]:
+                    self.items.remove(item)
+        
+        def check_collisions(self):
+            """檢查碰撞"""
+            # 子彈與敵人碰撞
+            for bullet in self.bullets[:]:
+                for enemy in self.enemies[:]:
+                    if self.distance(bullet, enemy) < bullet["r"] + enemy["r"]:
+                        enemy["hp"] -= self.player["bullet_power"]
+                        
+                        if enemy["hp"] <= 0:
+                            self.enemies.remove(enemy)
+                            self.player["score"] += 1
+                            
+                            # 每5殺升級
+                            if self.player["score"] % 5 == 0:
+                                self.player["level"] += 1
+                                self.player["bullet_power"] += 1
+                                self.player["max_hp"] += 10
+                                self.player["hp"] = self.player["max_hp"]
+                        
+                        if bullet in self.bullets:
+                            self.bullets.remove(bullet)
+                        break
+            
+            # 敵人與玩家碰撞
+            for enemy in self.enemies[:]:
+                if self.distance(self.player, enemy) < self.player["r"] + enemy["r"]:
+                    self.player["hp"] -= 15
+                    self.enemies.remove(enemy)
+                    
+                    if self.player["hp"] <= 0:
+                        self.running = False
+            
+            # 道具與玩家碰撞
+            for item in self.items[:]:
+                if self.distance(self.player, item) < self.player["r"] + item["r"]:
+                    if item["type"] == "heal":
+                        self.player["hp"] = min(self.player["max_hp"], self.player["hp"] + 30)
+                    elif item["type"] == "speed":
+                        self.player["speed_buff"] = time.time() * 1000 + item["duration"]
+                    
+                    self.items.remove(item)
+        
+        def draw_game(self):
+            """繪製遊戲畫面"""
+            # 清空畫布
+            self.ctx.clearRect(0, 0, self.W, self.H)
+            
+            # 繪製道具
+            for item in self.items:
+                color = "lime" if item["type"] == "speed" else "pink"
+                self.draw_circle(item["x"], item["y"], item["r"], color)
+            
+            # 繪製子彈
+            for bullet in self.bullets:
+                self.draw_circle(bullet["x"], bullet["y"], bullet["r"], "yellow")
+            
+            # 繪製敵人
+            for enemy in self.enemies:
+                if enemy["type"] == "chaser":
+                    color = "#ff4444"
+                elif enemy["type"] == "linear":
+                    color = "#ff9933"
+                else:
+                    color = "#cc44ff"
+                
+                self.draw_circle(enemy["x"], enemy["y"], enemy["r"], color)
+                
+                # 血條
+                hp_ratio = enemy["hp"] / (2 + self.player["level"] // 2)
+                self.ctx.fillStyle = "red"
+                self.ctx.fillRect(
+                    enemy["x"] - enemy["r"],
+                    enemy["y"] - enemy["r"] - 8,
+                    enemy["r"] * 2 * hp_ratio,
+                    4
+                )
+            
+            # 繪製玩家
+            self.draw_circle(self.player["x"], self.player["y"], self.player["r"], "lime")
+            
+            # 玩家血條
+            hp_ratio = self.player["hp"] / self.player["max_hp"]
+            self.ctx.fillStyle = "red"
+            self.ctx.fillRect(
+                self.player["x"] - self.player["r"],
+                self.player["y"] - self.player["r"] - 10,
+                self.player["r"] * 2 * hp_ratio,
+                6
+            )
+            
+            # 瞄準線
+            self.ctx.beginPath()
+            self.ctx.moveTo(self.player["x"], self.player["y"])
+            self.ctx.lineTo(
+                self.player["x"] + self.player["dx"] * self.player["r"] * 1.5,
+                self.player["y"] + self.player["dy"] * self.player["r"] * 1.5
+            )
+            self.ctx.strokeStyle = "white"
+            self.ctx.lineWidth = 3
+            self.ctx.stroke()
+            self.ctx.closePath()
+            
+            # 更新資訊
+            self.info.text = f"分數: {self.player['score']} | 等級: {self.player['level']} | 血量: {int(self.player['hp'])}"
+        
+        def game_loop(self):
+            """遊戲主循環"""
+            if not self.running:
+                # 遊戲結束畫面
+                self.ctx.fillStyle = "rgba(0, 0, 0, 0.7)"
+                self.ctx.fillRect(0, 0, self.W, self.H)
+                
+                self.ctx.fillStyle = "white"
+                self.ctx.font = "32px Arial"
+                self.ctx.textAlign = "center"
+                self.ctx.textBaseline = "middle"
+                self.ctx.fillText("遊戲結束！", self.W // 2, self.H // 2 - 30)
+                self.ctx.fillText(f"最終分數: {self.player['score']}", self.W // 2, self.H // 2 + 20)
+                
+                self.restart_btn.style.display = "inline-block"
+                return
+            
+            # 更新遊戲狀態
+            self.update_player()
+            self.update_bullets()
+            self.update_enemies()
+            self.update_items()
+            
+            # 射擊
+            if self.mouse_down:
+                self.shoot()
+            
+            # 檢查碰撞
+            self.check_collisions()
+            
+            # 生成新敵人
+            now_ms = time.time() * 1000
+            if now_ms - self.last_enemy_spawn > self.enemy_spawn_interval:
+                self.spawn_enemy()
+                self.last_enemy_spawn = now_ms
+            
+            # 生成新道具
+            if now_ms - self.last_item_spawn > self.item_spawn_interval:
+                self.spawn_item()
+                self.last_item_spawn = now_ms
+            
+            # 繪製遊戲
+            self.draw_game()
+        
+        def restart(self, event=None):
+            """重新開始遊戲"""
+            # 重置玩家
+            self.player.update({
+                "x": self.W // 2,
+                "y": self.H // 2,
+                "r": 15,
+                "speed": 6,
+                "hp": 100,
+                "max_hp": 100,
+                "level": 1,
+                "score": 0,
+                "bullet_power": 1,
+                "speed_buff": 0,
+                "dx": 0,
+                "dy": -1
+            })
+            
+            # 清空遊戲物件
+            self.bullets.clear()
+            self.enemies.clear()
+            self.items.clear()
+            
+            # 重置狀態
+            self.running = True
+            self.last_enemy_spawn = 0
+            self.last_item_spawn = 0
+            
+            # 隱藏重新開始按鈕
+            self.restart_btn.style.display = "none"
+    
+    # 啟動遊戲
+    game = ShooterGame()
+
+# ==================== 躲避球遊戲 ====================
+def init_dodge_game(container):
+    """初始化躲避球遊戲"""
+    
+    canvas = html.CANVAS(id="dodgeCanvas", width=400, height=400)
+    
+    info_div = html.DIV()
+    info_div.innerHTML = '''
+        生存秒數：<span id="dodgeTime">0</span> |
+        額外得分：<span id="dodgeBonus">0</span> |
+        總分：<span id="dodgeTotal">0</span>
+    '''
+    info_div.style.margin = "15px 0"
+    info_div.style.fontSize = "16px"
+    
+    restart_btn = html.BUTTON("🔄 重新開始", id="dodgeRestart")
+    restart_btn.style.display = "none"
+    restart_btn.style.marginTop = "10px"
+    restart_btn.style.padding = "8px 16px"
+    restart_btn.style.background = "#3498db"
+    restart_btn.style.color = "white"
+    restart_btn.style.border = "none"
+    restart_btn.style.borderRadius = "6px"
+    restart_btn.style.cursor = "pointer"
+    
+    container <= canvas
+    container <= info_div
+    container <= restart_btn
+    
+    # 躲避球遊戲邏輯
+    class DodgeGame:
+        def __init__(self):
+            self.canvas = document["dodgeCanvas"]
+            self.ctx = self.canvas.getContext("2d")
+            self.restart_btn = document["dodgeRestart"]
+            
+            # 玩家設定
+            self.player_r = 10
+            self.player_x = self.canvas.width // 2
+            self.player_y = self.canvas.height // 2
+            
+            # 遊戲變數
+            self.balls = []
+            self.items = []
+            self.ball_r = 10
+            self.item_r = 8
+            self.base_speed = 1.5
+            self.speed_mult = 1
+            self.bonus = 0
+            self.running = True
+            self.start_time = time.time()
+            
+            # 綁定事件
+            self.canvas.bind("mousemove", self.on_mouse_move)
+            self.restart_btn.bind("click", self.restart)
+            
+            # 啟動計時器
+            self.update_timer = timer.set_interval(self.update_game, 30)
+            self.ball_timer = timer.set_interval(self.add_ball, 1000)
+            self.item_timer = timer.set_interval(self.add_item, 4000)
+            
+            game_timers.extend([self.update_timer, self.ball_timer, self.item_timer])
+        
+        def on_mouse_move(self, event):
+            """處理滑鼠移動"""
+            rect = self.canvas.getBoundingClientRect()
+            self.player_x = event.clientX - rect.left
+            self.player_y = event.clientY - rect.top
+        
+        def draw_circle(self, x, y, r, color):
+            """繪製圓形"""
+            self.ctx.beginPath()
+            self.ctx.arc(x, y, r, 0, 2 * math.pi)
+            self.ctx.fillStyle = color
+            self.ctx.fill()
+            self.ctx.closePath()
+        
+        def add_ball(self):
+            """新增紅球"""
+            if not self.running:
+                return
+            
+            speed = self.base_speed * self.speed_mult
+            self.balls.append({
+                "x": random.randint(self.ball_r, self.canvas.width - self.ball_r),
+                "y": -self.ball_r,
+                "vx": random.uniform(-1.5, 1.5),
+                "vy": random.uniform(speed - 0.5, speed + 0.5)
+            })
+        
+        def add_item(self):
+            """新增道具"""
+            if self.running and random.random() < 0.6:
+                self.items.append({
+                    "x": random.randint(self.item_r, self.canvas.width - self.item_r),
+                    "y": -self.item_r
+                })
+        
+        def update_game(self):
+            """更新遊戲狀態"""
+            if not self.running:
+                return
+            
+            # 清空畫布
+            self.ctx.clearRect(0, 0, self.canvas.width, self.canvas.height)
+            
+            # 更新紅球
+            for ball in self.balls[:]:
+                ball["x"] += ball["vx"]
+                ball["y"] += ball["vy"]
+                
+                # 牆壁反彈
+                if ball["x"] <= self.ball_r or ball["x"] >= self.canvas.width - self.ball_r:
+                    ball["vx"] *= -1
+                
+                # 繪製紅球
+                self.draw_circle(ball["x"], ball["y"], self.ball_r, "red")
+                
+                # 碰撞檢測
+                dx = ball["x"] - self.player_x
+                dy = ball["y"] - self.player_y
+                distance = math.sqrt(dx*dx + dy*dy)
+                
+                if distance < self.ball_r + self.player_r:
+                    self.end_game()
+                    return
+            
+            # 移除超出畫面的紅球
+            self.balls[:] = [b for b in self.balls if b["y"] <= self.canvas.height + self.ball_r]
+            
+            # 更新道具
+            for item in self.items[:]:
+                item["y"] += 2
+                self.draw_circle(item["x"], item["y"], self.item_r, "lime")
+                
+                # 碰撞檢測
+                dx = item["x"] - self.player_x
+                dy = item["y"] - self.player_y
+                distance = math.sqrt(dx*dx + dy*dy)
+                
+                if distance < self.item_r + self.player_r:
+                    self.items.remove(item)
+                    self.bonus += 5
+            
+            # 移除超出畫面的道具
+            self.items[:] = [i for i in self.items if i["y"] <= self.canvas.height]
+            
+            # 繪製玩家
+            self.draw_circle(self.player_x, self.player_y, self.player_r, "green")
+            
+            # 更新分數
+            seconds = int(time.time() - self.start_time)
+            total = seconds + self.bonus
+            
+            document["dodgeTime"].text = str(seconds)
+            document["dodgeBonus"].text = str(self.bonus)
+            document["dodgeTotal"].text = str(total)
+            
+            # 每10秒增加難度
+            if seconds % 10 == 0 and seconds > 0:
+                self.speed_mult += 0.2
+        
+        def end_game(self):
+            """結束遊戲"""
+            self.running = False
+            self.ctx.fillStyle = "black"
+            self.ctx.font = "20px Arial"
+            self.ctx.textAlign = "center"
+            self.ctx.textBaseline = "middle"
+            
+            total = int(document["dodgeTotal"].text)
+            self.ctx.fillText(f"遊戲結束！總分：{total}", 
+                            self.canvas.width // 2, 
+                            self.canvas.height // 2)
+            
+            self.restart_btn.style.display = "inline-block"
+        
+        def restart(self, event=None):
+            """重新開始遊戲"""
+            # 重置遊戲狀態
+            self.player_x = self.canvas.width // 2
+            self.player_y = self.canvas.height // 2
+            self.balls.clear()
+            self.items.clear()
+            self.speed_mult = 1
+            self.bonus = 0
+            self.running = True
+            self.start_time = time.time()
+            
+            # 更新顯示
+            document["dodgeTime"].text = "0"
+            document["dodgeBonus"].text = "0"
+            document["dodgeTotal"].text = "0"
+            
+            # 隱藏重新開始按鈕
+            self.restart_btn.style.display = "none"
+    
+    # 啟動遊戲
+    game = DodgeGame()
+
+# ==================== 點擊方塊遊戲 ====================
+def init_clicker_game(container):
+    """初始化點擊方塊遊戲"""
+    
+    canvas = html.CANVAS(id="clickerCanvas", width=400, height=400)
+    
+    info_div = html.DIV()
+    info_div.innerHTML = '''
+        分數：<span id="clickerScore">0</span> |
+        剩餘時間：<span id="clickerTime">30</span> 秒
+    '''
+    info_div.style.margin = "15px 0"
+    info_div.style.fontSize = "18px"
+    
+    container <= canvas
+    container <= info_div
+    
+    # 點擊方塊遊戲邏輯
+    class ClickerGame:
+        def __init__(self):
+            self.canvas = document["clickerCanvas"]
+            self.ctx = self.canvas.getContext("2d")
+            
+            # 遊戲變數
+            self.score = 0
+            self.time_left = 30
+            self.box_size = 40
+            self.box_x = random.randint(0, self.canvas.width - self.box_size)
+            self.box_y = random.randint(0, self.canvas.height - self.box_size)
+            self.running = True
+            
+            # 綁定事件
+            self.canvas.bind("click", self.on_click)
+            
+            # 啟動計時器
+            self.draw_timer = timer.set_interval(self.draw_box, 16)
+            self.countdown_timer = timer.set_interval(self.countdown, 1000)
+            
+            game_timers.extend([self.draw_timer, self.countdown_timer])
+            
+            # 初始繪製
+            self.update_score()
+            self.update_time()
+            self.draw_box()
+        
+        def draw_box(self):
+            """繪製方塊"""
+            self.ctx.clearRect(0, 0, self.canvas.width, self.canvas.height)
+            self.ctx.fillStyle = "red"
+            self.ctx.fillRect(self.box_x, self.box_y, self.box_size, self.box_size)
+        
+        def move_box(self):
+            """移動方塊到隨機位置"""
+            self.box_x = random.randint(0, self.canvas.width - self.box_size)
+            self.box_y = random.randint(0, self.canvas.height - self.box_size)
+            self.draw_box()
+        
+        def on_click(self, event):
+            """處理點擊事件"""
+            if not self.running:
+                return
+            
+            x = event.offsetX
+            y = event.offsetY
+            
+            # 檢查是否點中方塊
+            if (self.box_x <= x <= self.box_x + self.box_size and 
+                self.box_y <= y <= self.box_y + self.box_size):
+                self.score += 1
+                self.update_score()
+                self.move_box()
+        
+        def update_score(self):
+            """更新分數顯示"""
+            document["clickerScore"].text = str(self.score)
+        
+        def update_time(self):
+            """更新時間顯示"""
+            document["clickerTime"].text = str(self.time_left)
+        
+        def countdown(self):
+            """倒計時"""
+            if not self.running:
+                return
+            
+            self.time_left -= 1
+            self.update_time()
+            
+            if self.time_left <= 0:
+                self.end_game()
+        
+        def end_game(self):
+            """結束遊戲"""
+            self.running = False
+            
+            # 清除畫布
+            self.ctx.clearRect(0, 0, self.canvas.width, self.canvas.height)
+            
+            # 顯示結束訊息
+            self.ctx.fillStyle = "black"
+            self.ctx.font = "24px Arial"
+            self.ctx.textAlign = "center"
+            self.ctx.textBaseline = "middle"
+            
+            self.ctx.fillText(f"遊戲結束！", 
+                            self.canvas.width // 2, 
+                            self.canvas.height // 2 - 20)
+            self.ctx.fillText(f"得分：{self.score}", 
+                            self.canvas.width // 2, 
+                            self.canvas.height // 2 + 20)
+    
+    # 啟動遊戲
+    game = ClickerGame()
+
+# ==================== 星際戰爭遊戲 ====================
+def init_spacewar_game(container):
+    """初始化星際戰爭遊戲"""
+    
+    canvas = html.CANVAS(id="spacewarCanvas", width=600, height=500)
+    
+    info_div = html.DIV(id="spacewarInfo")
+    info_div.innerHTML = '''
+        分數：<span id="spacewarScore">0</span> |
+        生命：<span id="spacewarHealth">100</span> |
+        關卡：<span id="spacewarLevel">1</span>
+    '''
+    info_div.style.margin = "15px 0"
+    info_div.style.fontSize = "18px"
+    
+    restart_btn = html.BUTTON("🔄 重新開始", id="spacewarRestart")
+    restart_btn.style.display = "none"
+    restart_btn.style.marginTop = "10px"
+    restart_btn.style.padding = "8px 16px"
+    restart_btn.style.background = "#3498db"
+    restart_btn.style.color = "white"
+    restart_btn.style.border = "none"
+    restart_btn.style.borderRadius = "6px"
+    restart_btn.style.cursor = "pointer"
+    
+    container <= canvas
+    container <= info_div
+    container <= restart_btn
+    
+    # 星際戰爭遊戲邏輯
+    class SpaceWarGame:
+        def __init__(self):
+            self.canvas = document["spacewarCanvas"]
+            self.ctx = self.canvas.getContext("2d")
+            self.restart_btn = document["spacewarRestart"]
+            
+            # 遊戲狀態
+            self.score = 0
+            self.health = 100
+            self.level = 1
+            self.running = True
+            
+            # 玩家設定
+            self.player_x = 100
+            self.player_y = 400
+            self.player_w = 60
+            self.player_h = 60
+            self.player_speed = 6
+            
+            # 遊戲物件
+            self.enemies = []
+            self.keys = {"w": False, "a": False, "s": False, "d": False}
+            self.stars = []
+            
+            # 遊戲設定
+            self.spawn_interval = 2000
+            self.enemy_speed = 5
+            
+            # 生成星星背景
+            for _ in range(100):
+                self.stars.append([
+                    random.randint(0, self.canvas.width),
+                    random.randint(0, self.canvas.height)
+                ])
+            
+            # 綁定事件
+            document.bind("keydown", self.on_key_down)
+            document.bind("keyup", self.on_key_up)
+            self.restart_btn.bind("click", self.restart)
+            
+            # 啟動計時器
+            self.game_timer = timer.set_interval(self.update_game, 50)
+            self.enemy_timer = timer.set_interval(self.spawn_enemy, self.spawn_interval)
+            
+            game_timers.extend([self.game_timer, self.enemy_timer])
+        
+        def on_key_down(self, event):
+            """處理按鍵按下"""
+            key = event.key.lower()
+            if key in self.keys:
+                self.keys[key] = True
+        
+        def on_key_up(self, event):
+            """處理按鍵釋放"""
+            key = event.key.lower()
+            if key in self.keys:
+                self.keys[key] = False
+        
+        def draw_background(self):
+            """繪製星空背景"""
+            # 漸層背景
+            gradient = self.ctx.createLinearGradient(0, 0, 0, self.canvas.height)
+            gradient.addColorStop(0, "#001f3d")
+            gradient.addColorStop(1, "#1f5b8b")
+            self.ctx.fillStyle = gradient
+            self.ctx.fillRect(0, 0, self.canvas.width, self.canvas.height)
+            
+            # 星星
+            self.ctx.fillStyle = "white"
+            for star in self.stars:
+                star[1] += 0.2
+                if star[1] > self.canvas.height:
+                    star[1] = 0
+                    star[0] = random.randint(0, self.canvas.width)
+                
+                self.ctx.beginPath()
+                self.ctx.arc(star[0], star[1], 1, 0, math.pi * 2)
+                self.ctx.fill()
+        
+        def draw_player(self):
+            """繪製玩家飛船"""
+            # 飛船主體
+            self.ctx.fillStyle = "#3498db"
+            self.ctx.beginPath()
+            self.ctx.moveTo(self.player_x + self.player_w/2, self.player_y)
+            self.ctx.lineTo(self.player_x + self.player_w, self.player_y + self.player_h/3)
+            self.ctx.lineTo(self.player_x + self.player_w/1.5, self.player_y + self.player_h/1.5)
+            self.ctx.lineTo(self.player_x + self.player_w/3, self.player_y + self.player_h/1.5)
+            self.ctx.lineTo(self.player_x, self.player_y + self.player_h/3)
+            self.ctx.closePath()
+            self.ctx.fill()
+            
+            # 駕駛艙
+            self.ctx.fillStyle = "#2980b9"
+            self.ctx.beginPath()
+            self.ctx.arc(self.player_x + self.player_w/2, 
+                        self.player_y + self.player_h/3, 
+                        self.player_w/4, 0, math.pi * 2)
+            self.ctx.fill()
+        
+        def move_player(self):
+            """移動玩家"""
+            if self.keys["w"] and self.player_y > 0:
+                self.player_y -= self.player_speed
+            if self.keys["s"] and self.player_y < self.canvas.height - self.player_h:
+                self.player_y += self.player_speed
+            if self.keys["a"] and self.player_x > 0:
+                self.player_x -= self.player_speed
+            if self.keys["d"] and self.player_x < self.canvas.width - self.player_w:
+                self.player_x += self.player_speed
+        
+        def spawn_enemy(self):
+            """生成敵人"""
+            if not self.running:
+                return
+            
+            size = random.randint(30, 60)
+            x = random.randint(0, self.canvas.width - size)
+            enemy_type = random.choice(["UFO", "Missile", "Drone"])
+            
+            self.enemies.append({
+                "x": x,
+                "y": -size,
+                "size": size,
+                "type": enemy_type
+            })
+        
+        def draw_enemies(self):
+            """繪製敵人"""
+            for enemy in self.enemies[:]:
+                # 移動敵人
+                enemy["y"] += self.enemy_speed + self.level // 2
+                
+                # 繪製不同類型的敵人
+                if enemy["type"] == "UFO":
+                    self.ctx.fillStyle = "#2ecc71"
+                    self.ctx.beginPath()
+                    self.ctx.ellipse(
+                        enemy["x"] + enemy["size"]/2,
+                        enemy["y"] + enemy["size"]/2,
+                        enemy["size"]/2,
+                        enemy["size"]/4,
+                        0, 0, math.pi * 2
+                    )
+                    self.ctx.fill()
+                
+                elif enemy["type"] == "Missile":
+                    self.ctx.fillStyle = "#e74c3c"
+                    self.ctx.fillRect(
+                        enemy["x"],
+                        enemy["y"],
+                        enemy["size"]/3,
+                        enemy["size"] * 2
+                    )
+                
+                elif enemy["type"] == "Drone":
+                    self.ctx.fillStyle = "#95a5a6"
+                    self.ctx.fillRect(
+                        enemy["x"],
+                        enemy["y"],
+                        enemy["size"],
+                        enemy["size"]/2
+                    )
+                
+                # 碰撞檢測
+                if (self.player_x < enemy["x"] + enemy["size"] and
+                    self.player_x + self.player_w > enemy["x"] and
+                    self.player_y < enemy["y"] + enemy["size"] and
+                    self.player_y + self.player_h > enemy["y"]):
+                    
+                    self.health -= 10
+                    self.enemies.remove(enemy)
+                    
+                    if self.health <= 0:
+                        self.end_game()
+                
+                # 移除超出畫面的敵人
+                if enemy["y"] > self.canvas.height:
+                    self.enemies.remove(enemy)
+        
+        def update_game(self):
+            """更新遊戲狀態"""
+            if not self.running:
+                return
+            
+            # 清空畫布
+            self.ctx.clearRect(0, 0, self.canvas.width, self.canvas.height)
+            
+            # 繪製遊戲元素
+            self.draw_background()
+            self.draw_player()
+            self.move_player()
+            self.draw_enemies()
+            
+            # 更新分數和等級
+            self.score += 1
+            if self.score % 500 == 0:
+                self.level += 1
+            
+            # 更新顯示
+            document["spacewarScore"].text = str(self.score)
+            document["spacewarHealth"].text = str(self.health)
+            document["spacewarLevel"].text = str(self.level)
+        
+        def end_game(self):
+            """結束遊戲"""
+            self.running = False
+            
+            # 顯示結束畫面
+            self.ctx.fillStyle = "rgba(0, 0, 0, 0.8)"
+            self.ctx.fillRect(0, 0, self.canvas.width, self.canvas.height)
+            
+            self.ctx.fillStyle = "white"
+            self.ctx.font = "32px Arial"
+            self.ctx.textAlign = "center"
+            self.ctx.textBaseline = "middle"
+            
+            self.ctx.fillText("遊戲結束！", 
+                            self.canvas.width // 2, 
+                            self.canvas.height // 2 - 30)
+            self.ctx.fillText(f"最終分數: {self.score}", 
+                            self.canvas.width // 2, 
+                            self.canvas.height // 2 + 30)
+            
+            self.restart_btn.style.display = "inline-block"
+        
+        def restart(self, event=None):
+            """重新開始遊戲"""
+            # 重置遊戲狀態
+            self.score = 0
+            self.health = 100
+            self.level = 1
+            self.running = True
+            
+            # 重置玩家位置
+            self.player_x = 100
+            self.player_y = 400
+            
+            # 清空敵人
+            self.enemies.clear()
+            
+            # 更新顯示
+            document["spacewarScore"].text = "0"
+            document["spacewarHealth"].text = "100"
+            document["spacewarLevel"].text = "1"
+            
+            # 隱藏重新開始按鈕
+            self.restart_btn.style.display = "none"
+    
+    # 啟動遊戲
+    game = SpaceWarGame()
+
+# ==================== 主程式入口 ====================
+def main():
+    """主程式入口"""
+    
+    # 綁定主選單按鈕
+    document["todoBtn"].bind("click", load_todo_app)
+    document["shooterBtn"].bind("click", lambda e: load_game('shooter'))
+    document["dodgeBtn"].bind("click", lambda e: load_game('dodge'))
+    document["clickerBtn"].bind("click", lambda e: load_game('clicker'))
+    document["spacewarBtn"].bind("click", lambda e: load_game('spacewar'))
+    document["backBtn"].bind("click", show_main_menu)
+    
+    # 顯示主選單
+    show_main_menu()
+    
+    # 請求通知權限
+    if hasattr(window, 'Notification') and window.Notification.permission == "default":
+        window.Notification.requestPermission()
+
+# 啟動主程式
+main()
+    </script>
+</body>
+</html>
